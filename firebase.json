@@ -1,0 +1,24 @@
+{
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "aman-protection-2026",
+          "appId": "1:918221697752:android:0dba5edbc12402b4f09dad",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "aman-protection-2026",
+          "configurations": {
+            "web": "1:918221697752:web:ec43440bc9fbea0df09dad"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,115 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function userPath(uid) {
+      return /databases/$(database)/documents/users/$(uid);
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && exists(userPath(request.auth.uid))
+        && get(userPath(request.auth.uid)).data.get('isAdmin', false) == true;
+    }
+
+    function isActiveUser() {
+      return signedIn()
+        && (
+          isAdmin()
+          || !exists(userPath(request.auth.uid))
+          || get(userPath(request.auth.uid)).data.get('isActive', true) == true
+        );
+    }
+
+    function hasActiveSubscription() {
+      return isAdmin()
+        || !exists(userPath(request.auth.uid))
+        || (
+          get(userPath(request.auth.uid)).data.get('isSubscribed', true) == true
+          && (
+            get(userPath(request.auth.uid)).data.get('subscriptionExpiryDate', null) == null
+            || get(userPath(request.auth.uid)).data.get('subscriptionExpiryDate', null) > request.time
+          )
+        );
+    }
+
+    function hasPermission(permission) {
+      return isActiveUser() && hasActiveSubscription()
+        && (
+          isAdmin()
+          || !exists(userPath(request.auth.uid))
+          || !get(userPath(request.auth.uid)).data.keys().hasAny(['permissions'])
+          || get(userPath(request.auth.uid)).data.permissions.get(permission, true) == true
+        );
+    }
+
+    match /users/{uid} {
+      allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
+      allow create: if isAdmin()
+        || (
+          signedIn()
+          && request.auth.uid == uid
+          && request.resource.data.get('role', 'user') in ['shop_owner', 'user']
+          && !request.resource.data.keys().hasAny([
+            'isAdmin',
+            'isActive',
+            'isSubscribed',
+            'permissions'
+          ])
+        );
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /sales_contracts/{contractId} {
+      allow read: if isActiveUser();
+      allow create: if isAdmin()
+        || (
+          hasPermission('registerSales')
+          && request.resource.data.userId == request.auth.uid
+        );
+      allow update: if isAdmin()
+        || (
+          isActiveUser()
+          && resource.data.userId == request.auth.uid
+          && request.resource.data.userId == resource.data.userId
+        );
+      allow delete: if isAdmin()
+        || (
+          isActiveUser()
+          && resource.data.userId == request.auth.uid
+        );
+    }
+
+    match /stolen_reports/{reportId} {
+      allow read: if isActiveUser();
+      allow create: if isAdmin()
+        || (
+          hasPermission('submitReports')
+          && request.resource.data.userId == request.auth.uid
+        );
+      allow update, delete: if isAdmin();
+    }
+
+    match /device_transfers/{transferId} {
+      allow read: if isActiveUser();
+      allow create: if isAdmin()
+        || (
+          hasPermission('transferOwnership')
+          && request.resource.data.shopId == request.auth.uid
+        );
+      allow update, delete: if isAdmin();
+    }
+
+    match /admin_audit_logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin()
+        && request.resource.data.actorUid == request.auth.uid;
+      allow update, delete: if false;
+    }
+  }
+}

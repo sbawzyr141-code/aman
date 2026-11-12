@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "918221697752",
+    "project_id": "aman-protection-2026",
+    "storage_bucket": "aman-protection-2026.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:918221697752:android:0dba5edbc12402b4f09dad",
+        "android_client_info": {
+          "package_name": "com.example.aman_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAzntQJh6XG_faa_HrReQHNZ_vZYqJH0kc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
